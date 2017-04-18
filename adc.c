@@ -8,34 +8,36 @@
 
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <rtai.h>
-#include <rtai_sched.h>
-#include <rtai_sem.h>
+//#include <rtai.h>
+//#include <rtai_sched.h>
+//#include <rtai_sem.h>
 
 MODULE_LICENSE("GPL");
 
 // A/D registers MAX197
 // See page 29 TS-7250 manual.
-volatile uint8_t *ADCInitiate = NULL; *ADCOptInstalled = NULL, *ADCConvComplete = NULL;
-volatile uint16_t *ADCResult = NULL;
+
 
 int init_module(void) {
+	volatile unsigned char *ADCInitiate = NULL, *ADCOptInstalled = NULL, *ADCConvComplete = NULL;
+	volatile uint16_t *ADCResult = NULL;
 	// Attempt to map address space
-	ADCOptInstalled = (uint8_t *) __ioremap(0x22400000, 4096, 0);
-	ADCInitiate = (uint8_t *) __ioremap(0x10F00000, 4096, 0);
-	ADCConvComplete = (uint8_t *) __ioremap(0x10800000, 4096, 0);
+	ADCOptInstalled = (unsigned char *) __ioremap(0x22400000, 4096, 0);
+	ADCInitiate = (unsigned char *) __ioremap(0x10F00000, 4096, 0);
+	ADCConvComplete = (unsigned char *) __ioremap(0x10800000, 4096, 0);
 	ADCResult = (uint16_t *)ADCInitiate;
 	
-	if( !ADCOptInstalled || !ADCInitiate || !ADCConvComplete );
+	if( !ADCOptInstalled || !ADCInitiate || !ADCConvComplete )
 	{ 
 		printk("Unable to map memory space\n");
 		return -1;
 	}
-	else if( ! (*ADCOptInstalled & (0x01) ) // ADC Installed when LSB is set;
+	else if( ! (*ADCOptInstalled & (0x01)) ) // ADC Installed when LSB is set;
 	{
 		printk("ADC option not installed\n");
 		return -1;
 	}
+	printk("MODULE INSTALLED\n");
 	
 	// 5 samples -- just to test
 	int i=0;
@@ -50,7 +52,7 @@ int init_module(void) {
 		printk("ADC result: %d\n", result);
 	}
 	
-	return EXIT_SUCCESS;
+	return 0; 
 }
 		
 void cleanup_module(void) {
