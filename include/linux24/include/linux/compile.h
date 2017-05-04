@@ -1,0 +1,6 @@
+#define UTS_VERSION "#1 Fri Feb 18 12:31:47 CST 2011"
+#define LINUX_COMPILE_TIME "12:31:47"
+#define LINUX_COMPILE_BY "jfischer"
+#define LINUX_COMPILE_HOST "nfs1.ece.missouri.edu"
+#define LINUX_COMPILE_DOMAIN "ece.missouri.edu"
+#define LINUX_COMPILER "gcc version 3.3.4"

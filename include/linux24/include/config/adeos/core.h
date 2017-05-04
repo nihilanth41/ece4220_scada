@@ -1,0 +1,1 @@
+#define CONFIG_ADEOS_CORE 1

@@ -1,0 +1,1 @@
+#define CONFIG_USB_OHCI_EP93XX 1

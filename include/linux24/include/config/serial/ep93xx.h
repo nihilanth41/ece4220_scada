@@ -1,0 +1,1 @@
+#define CONFIG_SERIAL_EP93XX 1

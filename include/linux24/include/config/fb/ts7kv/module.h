@@ -1,0 +1,1 @@
+#define CONFIG_FB_TS7KV_MODULE 1

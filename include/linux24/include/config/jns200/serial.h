@@ -1,0 +1,1 @@
+#undef  CONFIG_JNS200_SERIAL

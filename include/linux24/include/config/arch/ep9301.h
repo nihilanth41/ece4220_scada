@@ -1,0 +1,1 @@
+#define CONFIG_ARCH_EP9301 1

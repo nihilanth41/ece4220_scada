@@ -1,0 +1,1 @@
+#define CONFIG_EP93XX_VT 1
