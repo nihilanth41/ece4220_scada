@@ -79,20 +79,66 @@ static void button_handler(int irq_num, void *cookie) {
 //		}
 //	}
 	
-
-	st.button_status[0] = (*PBDR & 1 << 0);
+	
+	st.button_status[0] = (*PBDR & 1 << 0) ? 1 : 0;
+	st.button_status[1] = (*PBDR & 1 << 1) ? 1 : 0;
+	st.button_status[2] = (*PBDR & 1 << 2) ? 1 : 0;
 	if(*IntStsB & (1 << 0))
 	{
-		if(*GPIOBIntType2 & (1 << 0))
+		if(*GPIOBIntType2 & (1 << 0)) // Configured for rising edge
 		{
 			st.event_type = BTN0_RISING;
-			*GPIOBIntType2 &= ~(0x07);
+			*GPIOBIntType2 &= ~(1 << 0);
 
 		}
 		else{
 
 			st.event_type = BTN0_FALLING;
-			*GPIOBIntType2 |= (0x07);
+			*GPIOBIntType2 |= (1 << 0);
+		}
+		// Get ADC Value
+		// TODO 
+		st.line_voltage = 555;	
+		// Get event time
+		do_gettimeofday(&(st.event_tv));
+		// Write to fifo
+		int ret = rtf_put(FIFO_WRITE, &st, sizeof(st));
+	}
+
+	else if(*IntStsB & (1 << 1))
+	{
+		if(*GPIOBIntType2 & (1 << 1))
+		{
+			st.event_type = BTN1_RISING;
+			*GPIOBIntType2 &= ~(1 << 1);
+
+		}
+		else{
+
+			st.event_type = BTN1_FALLING;
+			*GPIOBIntType2 |= (1 << 1);
+		}
+		// Get ADC Value
+		// TODO 
+		st.line_voltage = 555;	
+		// Get event time
+		do_gettimeofday(&(st.event_tv));
+		// Write to fifo
+		int ret = rtf_put(FIFO_WRITE, &st, sizeof(st));
+	}
+	
+	else if(*IntStsB & (1 << 2))
+	{
+		if(*GPIOBIntType2 & (1 << 2))
+		{
+			st.event_type = BTN2_RISING;
+			*GPIOBIntType2 &= ~(1 << 2);
+
+		}
+		else{
+
+			st.event_type = BTN2_FALLING;
+			*GPIOBIntType2 |= (1 << 2);
 		}
 		// Get ADC Value
 		// TODO 
