@@ -9,12 +9,9 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/time.h>
-//#include <rtai.h>
-//#include <rtai_sched.h>
-//#include <rtai_sem.h>
-
+#include <rtai.h>
+#include <rtai_fifos.h>
 #include "status.h"
-
 MODULE_LICENSE("GPL");
 
 #define MSG_SIZE 150
@@ -50,44 +47,108 @@ static void button_handler(int irq_num, void *cookie) {
 	int i=0;	
 	status_t st; // Struct to populate with values
 	
-	// If RawIntSts == 1 then that button was pressed
-	for(i=0; i<NUM_BUTTONS; i++)
+	// If IntSts == 1 then that button was pressed
+//	for(i=0; i<NUM_BUTTONS; i++)
+//	{
+//		// Record raw port status
+//		st.button_status[i] = (*PBDR & 1 << i) ? 1 : 0; // Assign 1 if not 0
+//		// Determine which event occurred
+//		if( (*IntStsB & (1 << i)) ) 
+//		{ // Look for button event 
+//			// Button<i> event
+//			if( (*GPIOBIntType2 & (1 << i)) ) { 
+//				// Rising edge event
+//				switch(i) {
+//					case 0: st.event_type = BTN0_RISING; break;
+//					case 1: st.event_type = BTN1_RISING; break;
+//					case 2: st.event_type = BTN2_RISING; break;
+//					default: break;
+//				}
+//				// Set interrupt type to falling edge
+//				*GPIOBIntType2 &= ~(0x07);
+//			}
+//			else { // Falling edge event
+//				switch(i) { 
+//					case 0: st.event_type = BTN0_FALLING; break;
+//					case 1: st.event_type = BTN1_FALLING; break;
+//					case 2: st.event_type = BTN2_FALLING; break;
+//				}
+//				// Set interrupt type to rising edge
+//				*GPIOBIntType2 |= (0x07);
+//			}
+//		}
+//	}
+	
+	
+	st.button_status[0] = (*PBDR & 1 << 0) ? 1 : 0;
+	st.button_status[1] = (*PBDR & 1 << 1) ? 1 : 0;
+	st.button_status[2] = (*PBDR & 1 << 2) ? 1 : 0;
+	if(*IntStsB & (1 << 0))
 	{
-		// Record raw port status
-		st.button_status[i] = (*PBDR & 1 << i) ? 1 : 0; // Assign 1 if not 0
-		// Determine which event occurred
-		if( (*RawIntStsB & (1 << i)) ) 
-		{ // Look for button event 
-			// Button<i> event
-			if( (*GPIOBIntType2 & (1 << i)) ) { 
-				// Rising edge event
-				switch(i) {
-					case 0: st.event_type = BTN0_RISING; break;
-					case 1: st.event_type = BTN1_RISING; break;
-					case 2: st.event_type = BTN2_RISING; break;
-					default: break;
-				}
-				// Set interrupt type to falling edge
-				*GPIOBIntType2 &= ~(0x07);
-			}
-			else { // Falling edge event
-				switch(i) { 
-					case 0: st.event_type = BTN0_FALLING; break;
-					case 1: st.event_type = BTN1_FALLING; break;
-					case 2: st.event_type = BTN2_FALLING; break;
-				}
-				// Set interrupt type to rising edge
-				*GPIOBIntType2 |= (0x07);
-			}
+		if(*GPIOBIntType2 & (1 << 0)) // Configured for rising edge
+		{
+			st.event_type = BTN0_RISING;
+			*GPIOBIntType2 &= ~(1 << 0);
+
 		}
+		else{
+
+			st.event_type = BTN0_FALLING;
+			*GPIOBIntType2 |= (1 << 0);
+		}
+		// Get ADC Value
+		// TODO 
+		st.line_voltage = 555;	
+		// Get event time
+		do_gettimeofday(&(st.event_tv));
+		// Write to fifo
+		int ret = rtf_put(FIFO_WRITE, &st, sizeof(st));
 	}
-	// Get ADC Value
-	// TODO 
-	st.line_voltage = 555;	
-	// Get event time
-	do_gettimeofday(&(st.event_tv));
-	// Write to fifo
-	int ret = rtf_put(FIFO_WRITE, &st, sizeof(st));
+
+	else if(*IntStsB & (1 << 1))
+	{
+		if(*GPIOBIntType2 & (1 << 1))
+		{
+			st.event_type = BTN1_RISING;
+			*GPIOBIntType2 &= ~(1 << 1);
+
+		}
+		else{
+
+			st.event_type = BTN1_FALLING;
+			*GPIOBIntType2 |= (1 << 1);
+		}
+		// Get ADC Value
+		// TODO 
+		st.line_voltage = 555;	
+		// Get event time
+		do_gettimeofday(&(st.event_tv));
+		// Write to fifo
+		int ret = rtf_put(FIFO_WRITE, &st, sizeof(st));
+	}
+	
+	else if(*IntStsB & (1 << 2))
+	{
+		if(*GPIOBIntType2 & (1 << 2))
+		{
+			st.event_type = BTN2_RISING;
+			*GPIOBIntType2 &= ~(1 << 2);
+
+		}
+		else{
+
+			st.event_type = BTN2_FALLING;
+			*GPIOBIntType2 |= (1 << 2);
+		}
+		// Get ADC Value
+		// TODO 
+		st.line_voltage = 555;	
+		// Get event time
+		do_gettimeofday(&(st.event_tv));
+		// Write to fifo
+		int ret = rtf_put(FIFO_WRITE, &st, sizeof(st));
+	}
+
 	// Clear EOI register by *setting* the bit.
 	*GPIOBEOI |= (0x1F);
 
@@ -145,7 +206,7 @@ int init_module(void) {
 	//int result = (int)*ADCResult;
 
 	// Attempt to attach handler
-	if(rt_request_irq(hw_irq, button_handler, NULL, 1) < 0)
+	if(rt_request_irq(hw_irq, &button_handler, NULL , 1) < 0)
 	{
 		printk("Unable to request IRQ\n");
 		return -1;
