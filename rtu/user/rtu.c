@@ -59,7 +59,7 @@ void *readFromKernel(void *arg) {
 	pthread_exit(0);
 }
 
-void *sendToHistorian(void *args) {
+void sendToHistorian(void *args) {
 	Task = rt_task_init(nam2num("task1"), 0, 512, 256);
 	period = start_rt_timer(nano2count(10000000));
 	rt_task_make_periodic(Task, rt_get_time(), period);
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 	fromlen = sizeof(struct sockaddr_in); // size of structure
 
 	pthread_create(&reader, NULL, readFromKernel, NULL);
-	pthread_create(&sender, NULL, sendToHistorian, NULL);
+	pthread_create(&sender, NULL, (void *)sendToHistorian, NULL);
 
 	printf("Ready\n");
 
