@@ -20,17 +20,29 @@ double adc_to_volts(int adc_val);
 void error(const char *msg, int errval);
 int event_log(status_t event); 
 void event_to_string(char *buf, int event_type);
-void log_sort(void);
-void log_print(void);
+void log_view(void);
+void command_receive(void);
+void command_receive(void) {
+	char cmd_buf[MSG_SIZE];
+	// Commands: LED/led <1/2> <0/1>
+	// 
 
-// We only have to deal with two RTUs in this project 
-// rtu_1_log.txt and rtu_2_log.txt
-//system("cat Log1.txt Log2.txt | sort -t'|' -k3 -n";
-void log_view(void) {
-const char *command1 = "cat rtu_1_log.txt rtu_2_log.txt | sort -t'|' -k3 -n > event_log.txt";
-const char *command2 = "cat event_log.txt";
-system(command1);
-system(command2);
+	while( fgets(cmd_buf, MSG_SIZE, stdin) != NULL ) 
+	{
+		char c = cmd_buf[0];
+		switch(c) { 
+			case 'l': 
+			case 'L': { 
+					log_view();
+					break;
+				  }
+			case 'q':
+			case 'Q': {
+					exit(0);
+				  }
+			default: break;
+		}
+	}
 }
 
 int main(int argc, char *argv[]) {
@@ -40,7 +52,10 @@ int main(int argc, char *argv[]) {
 	struct hostent *hp;
 	char buffer[MSG_SIZE];
 	status_t event;
-	
+	pthread_t tid;
+
+	// Thread to get commands from stdin
+	pthread_create(&tid, NULL, (void *)command_receive, NULL);
 
 	strcpy(buffer, "HANDSHAKE");
 	if (argc != 3) {
@@ -84,10 +99,22 @@ int main(int argc, char *argv[]) {
 		sleep(0);
 	}
 	close(sock); // close socket.
+
+	pthread_join(&tid);
+
 	return 0;
 }
 
 
+// We only have to deal with two RTUs in this project 
+// rtu_1_log.txt and rtu_2_log.txt
+//system("cat Log1.txt Log2.txt | sort -t'|' -k3 -n";
+void log_view(void) {
+const char *command1 = "cat rtu_1_log.txt rtu_2_log.txt | sort -t'|' -k3 -n > event_log.txt";
+const char *command2 = "cat event_log.txt";
+system(command1);
+system(command2);
+}
 
 // Convert event struct to string and write to a file.
 // Gets filename from rtu_id.
