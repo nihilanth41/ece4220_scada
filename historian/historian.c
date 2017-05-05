@@ -11,6 +11,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <pthread.h>
 #include "status.h"
 
 #define MSG_SIZE 150			
@@ -100,7 +101,7 @@ int main(int argc, char *argv[]) {
 	}
 	close(sock); // close socket.
 
-	pthread_join(&tid);
+	pthread_join(tid, NULL);
 
 	return 0;
 }
